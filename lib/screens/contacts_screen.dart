@@ -17,7 +17,7 @@ class _ContactsScreenState extends State<ContactsScreen> {
   @override
   void initState() {
     super.initState();
-    // Контакты читаются из общей конфигурации сайта.
+    // Сейчас источник возвращает примеры контактов. Позже здесь будут данные API.
     _contactsFuture = widget.api.getContacts(contentLocale);
   }
 
@@ -50,8 +50,11 @@ class _ContactsScreenState extends State<ContactsScreen> {
             _ContactCard(
               icon: Icons.send_outlined,
               title: 'Telegram',
-              value: contacts.telegram?.toString(),
-              onTap: contacts.telegram == null
+              value: widget.api.isDemo
+                  ? '@pip_example'
+                  : contacts.telegram?.toString(),
+              isExample: widget.api.isDemo,
+              onTap: widget.api.isDemo || contacts.telegram == null
                   ? null
                   : () => openExternal(context, contacts.telegram!),
             ),
@@ -60,7 +63,8 @@ class _ContactsScreenState extends State<ContactsScreen> {
               icon: Icons.mail_outline_rounded,
               title: 'Почта',
               value: contacts.email,
-              onTap: contacts.email == null
+              isExample: widget.api.isDemo,
+              onTap: widget.api.isDemo || contacts.email == null
                   ? null
                   : () => openExternal(
                       context,
@@ -74,7 +78,10 @@ class _ContactsScreenState extends State<ContactsScreen> {
                 icon: Icons.language_rounded,
                 title: 'Сайт',
                 value: contacts.websiteUrl.toString(),
-                onTap: () => openExternal(context, contacts.websiteUrl!),
+                isExample: widget.api.isDemo,
+                onTap: widget.api.isDemo
+                    ? null
+                    : () => openExternal(context, contacts.websiteUrl!),
               ),
             ],
             const SectionHeading('О студии'),
@@ -114,11 +121,13 @@ class _ContactCard extends StatelessWidget {
     required this.title,
     required this.value,
     required this.onTap,
+    this.isExample = false,
   });
   final IconData icon;
   final String title;
   final String? value;
   final VoidCallback? onTap;
+  final bool isExample;
   @override
   Widget build(BuildContext context) => Panel(
     onTap: onTap,
@@ -146,7 +155,16 @@ class _ContactCard extends StatelessWidget {
                   height: 1.5,
                 ),
               ),
-              if (value != null)
+              if (isExample)
+                const Text(
+                  'Пример контакта',
+                  style: TextStyle(
+                    color: PipColors.amber,
+                    fontSize: 11,
+                    height: 1.8,
+                  ),
+                )
+              else if (onTap != null)
                 const Text(
                   'Нажмите, чтобы открыть',
                   style: TextStyle(
@@ -158,7 +176,7 @@ class _ContactCard extends StatelessWidget {
             ],
           ),
         ),
-        if (value != null)
+        if (onTap != null)
           const Icon(
             Icons.open_in_new_rounded,
             color: PipColors.muted,

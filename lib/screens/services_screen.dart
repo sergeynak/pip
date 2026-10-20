@@ -18,7 +18,7 @@ class _ServicesScreenState extends State<ServicesScreen> {
   @override
   void initState() {
     super.initState();
-    // Сохраняем Future, чтобы обычная перерисовка не запускала новый запрос.
+    // Сохраняем Future, чтобы перерисовка не запускала повторное чтение данных.
     _servicesFuture = widget.api.getServices(contentLocale);
   }
 
@@ -44,7 +44,7 @@ class _ServicesScreenState extends State<ServicesScreen> {
         const Padding(
           padding: EdgeInsets.only(bottom: 20),
           child: Text(
-            'Демонстрационные направления. Цены появятся после подключения CMS.',
+            'Услуги и цены приведены для примера.',
             style: TextStyle(fontSize: 12, color: PipColors.muted, height: 1.5),
           ),
         ),
@@ -58,7 +58,7 @@ class _ServicesScreenState extends State<ServicesScreen> {
             if (page.items.isEmpty)
               const EmptyContent(
                 'Пока нет услуг',
-                'Каталог появится после публикации в CMS.',
+                'Добавленные направления будут доступны здесь.',
               ),
             for (final (index, service) in page.items.indexed)
               Padding(

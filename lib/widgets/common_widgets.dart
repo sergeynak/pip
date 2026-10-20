@@ -183,7 +183,8 @@ class Panel extends StatelessWidget {
   );
 }
 
-// Future хранит результат запроса. Здесь выбираем, что показать:
+// Future хранит результат чтения данных — сейчас локальных, позже из API.
+// Здесь выбираем, что показать:
 // загрузку, ошибку с повтором или готовые данные через builder.
 class AsyncContent<T> extends StatelessWidget {
   const AsyncContent({

@@ -18,7 +18,7 @@ class _ArticleScreenState extends State<ArticleScreen> {
   @override
   void initState() {
     super.initState();
-    // Анонса из списка недостаточно: загружаем полный текст статьи.
+    // Читаем полный текст примера через источник данных. API подключим позже.
     _articleFuture = _loadArticle();
   }
 

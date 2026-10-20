@@ -43,7 +43,8 @@ class _BlogScreenState extends State<BlogScreen> {
   }
 
   Future<void> _loadMoreArticles() async {
-    // Номер следующей страницы берём из ответа API, а не придумываем сами.
+    // Номер следующей страницы берём из результата чтения данных.
+    // Локальные примеры помещаются на одну страницу; API подключим позже.
     if (_nextPage == null || _loadingMore) return;
     final requestVersion = _requestVersion;
     setState(() {

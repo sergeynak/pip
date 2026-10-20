@@ -19,7 +19,7 @@ class _ServiceScreenState extends State<ServiceScreen> {
   @override
   void initState() {
     super.initState();
-    // В каталоге только краткая карточка. Здесь запрашиваем состав услуги и FAQ.
+    // В каталоге краткая карточка. Здесь читаем полный локальный пример и FAQ.
     _serviceFuture = _loadService();
   }
 

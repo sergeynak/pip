@@ -6,6 +6,7 @@ import 'package:pip/api/api_service.dart';
 import 'package:pip/api/demo_api_service.dart';
 import 'package:pip/app.dart';
 import 'package:pip/models.dart';
+import 'package:pip/widgets/common_widgets.dart';
 
 void main() {
   // Проверяем экраны на поддельном API: тесты не отправляют реальные заявки.
@@ -45,6 +46,12 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Система и характер'), findsOneWidget);
       expect(find.text('Цифровой опыт'), findsNothing);
+      await tester.tap(find.text('Система и характер'));
+      await tester.pumpAndSettle();
+      expect(find.text('Пример экрана 1'), findsOneWidget);
+      expect(find.text('Пример экрана 2'), findsOneWidget);
+      await tester.tap(find.byType(BackButton));
+      await tester.pumpAndSettle();
 
       await tester.enterText(find.byType(TextField), 'нет такого проекта');
       await tester.pumpAndSettle();
@@ -58,7 +65,27 @@ void main() {
       await tester.pumpAndSettle();
 
       await _selectTab(tester, 'Контакты');
-      expect(find.text('Контакт пока не опубликован'), findsNWidgets(2));
+      expect(find.text('Пример контакта'), findsNWidgets(2));
+      expect(find.text('@pip_example'), findsOneWidget);
+      expect(find.text('hello@example.com'), findsOneWidget);
+      final emailCard = tester.widget<Panel>(
+        find
+            .ancestor(
+              of: find.text('hello@example.com'),
+              matching: find.byType(Panel),
+            )
+            .first,
+      );
+      final telegramCard = tester.widget<Panel>(
+        find
+            .ancestor(
+              of: find.text('@pip_example'),
+              matching: find.byType(Panel),
+            )
+            .first,
+      );
+      expect(emailCard.onTap, isNull);
+      expect(telegramCard.onTap, isNull);
       expect(tester.takeException(), isNull);
     },
   );

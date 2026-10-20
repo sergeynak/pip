@@ -58,7 +58,7 @@ class _BriefScreenState extends State<BriefScreen> {
   void initState() {
     super.initState();
     // Из услуги переносим только описание: допустимые названия направлений
-    // отдельно загрузятся из настроек API.
+    // отдельно прочитаем из локальных настроек формы.
     if (widget.initialServiceTitle != null) {
       _description.text = 'Интересует услуга «${widget.initialServiceTitle}».';
     }
@@ -69,7 +69,8 @@ class _BriefScreenState extends State<BriefScreen> {
   }
 
   Future<BriefOptions> _loadOptions() async {
-    // Сервер сообщает список услуг и ограничения полей формы.
+    // Пока источник возвращает локальные варианты и ограничения полей.
+    // После подключения API этот же метод сможет получать их с сервера.
     final options = await widget.api.getBriefOptions(contentLocale);
     _options = options;
     return options;
@@ -87,7 +88,8 @@ class _BriefScreenState extends State<BriefScreen> {
   void _draftChanged() => setState(() => _error = null);
 
   void _startCooldown(Duration duration) {
-    // После ошибки 429 ждём указанное сервером время. Повтора запроса нет:
+    // Подготовка к будущему API: после ошибки 429 выдерживаем время ожидания.
+    // Автоматического повтора нет:
     // отправка снова станет доступна только по нажатию пользователя.
     _retryTimer?.cancel();
     _retryUntil = DateTime.now().add(duration);
@@ -171,8 +173,8 @@ class _BriefScreenState extends State<BriefScreen> {
       description: _description.text.trim(),
       locale: contentLocale,
     );
-    // Одинаковые данные получают прежний ключ: сервер не создаст дубль
-    // после сетевой ошибки. Перемещение курсора данные заявки не меняет.
+    // Одинаковые данные получают прежний ключ для будущей защиты от дублей
+    // на сервере. Сейчас источник ничего не отправляет. Курсор ключ не меняет.
     final fingerprint = jsonEncode([
       draft.name,
       draft.contact,

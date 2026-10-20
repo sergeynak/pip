@@ -18,7 +18,7 @@ class _ProjectScreenState extends State<ProjectScreen> {
   @override
   void initState() {
     super.initState();
-    // Полное описание и галерея приходят отдельным запросом по slug проекта.
+    // Читаем подробный локальный пример по slug. Источник можно заменить на API.
     _projectFuture = _loadProject();
   }
 
@@ -85,14 +85,50 @@ class _ProjectScreenState extends State<ProjectScreen> {
                 ),
               ),
               const SectionHeading('Галерея'),
-              if (project.gallery.isEmpty)
+              if (project.gallery.isEmpty && widget.api.isDemo)
+                for (int index = 0; index < 2; index++)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 18),
+                    child: Panel(
+                      padding: EdgeInsets.zero,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          SizedBox(
+                            height: 220,
+                            width: double.infinity,
+                            child: ProjectArtwork(
+                              variant: project.visual + index,
+                              demo: true,
+                            ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Text(
+                              'Пример экрана ${index + 1}',
+                              style: const TextStyle(
+                                color: PipColors.muted,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
+              else if (project.gallery.isEmpty)
                 const EmptyContent(
                   'Нет изображений',
                   'Галерея этого проекта пока не опубликована.',
                 ),
               for (final image in project.gallery) GalleryImage(image: image),
               const SizedBox(height: 18),
-              if (project.websiteUrl != null)
+              if (widget.api.isDemo)
+                const OutlinedButton(
+                  onPressed: null,
+                  child: Text('Ссылка на сайт · пример'),
+                )
+              else if (project.websiteUrl != null)
                 OutlinedButton.icon(
                   onPressed: () => openExternal(context, project.websiteUrl!),
                   icon: const Icon(Icons.open_in_new_rounded),

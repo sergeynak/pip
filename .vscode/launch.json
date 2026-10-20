@@ -2,17 +2,10 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Pip · API",
+      "name": "Pip · макет приложения",
       "request": "launch",
       "type": "dart",
       "program": "lib/main.dart"
-    },
-    {
-      "name": "Pip · офлайн-макет",
-      "request": "launch",
-      "type": "dart",
-      "program": "lib/main.dart",
-      "toolArgs": ["--dart-define=USE_DEMO_DATA=true"]
     }
   ]
 }

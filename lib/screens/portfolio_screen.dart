@@ -41,7 +41,7 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
   }
 
   Future<ContentPage<StudioProject>> _loadProjects() async {
-    // Номер запроса позволяет отличить актуальный поиск от старого ответа.
+    // Номер загрузки отличает актуальный поиск от устаревшего результата.
     _requestVersion++;
     final requestVersion = _requestVersion;
     final page = await widget.api.getProjects(
@@ -59,7 +59,8 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
   }
 
   void _searchChanged(String query) {
-    // Ждём паузу в наборе текста, чтобы не запрашивать API после каждой буквы.
+    // Ждём паузу в наборе, чтобы не перечитывать данные после каждой буквы.
+    // Такая же задержка пригодится при будущем подключении API.
     _debounce?.cancel();
     _requestVersion++;
     setState(() {

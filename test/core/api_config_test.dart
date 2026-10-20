@@ -2,14 +2,16 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:pip/api/api_config.dart';
 
 void main() {
-  test('application environment defaults to the production API', () {
-    expect(
-      ApiConfig.fromEnvironment().baseUri.toString(),
-      const String.fromEnvironment(
-        'API_BASE_URL',
-        defaultValue: 'https://pip.kz/api/v1',
-      ),
-    );
+  test('environment has no server unless API_BASE_URL is supplied', () {
+    const baseUrl = String.fromEnvironment('API_BASE_URL');
+    final config = ApiConfig.fromEnvironment();
+    if (baseUrl.trim().isEmpty) {
+      expect(config.baseUri, isNull);
+      expect(config.isConfigured, isFalse);
+    } else {
+      expect(config.baseUri, Uri.parse(baseUrl.trim()));
+      expect(config.isConfigured, isTrue);
+    }
   });
 
   test('an explicitly unconfigured transport never assumes a server', () {

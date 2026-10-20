@@ -1,7 +1,5 @@
 /// Адрес публичного API и время ожидания ответа.
 class ApiConfig {
-  static const productionBaseUrl = 'https://pip.kz/api/v1';
-
   ApiConfig({String? baseUrl, this.timeout = const Duration(seconds: 15)})
     : baseUri = _parseBaseUrl(baseUrl) {
     if (timeout <= Duration.zero) {
@@ -9,12 +7,8 @@ class ApiConfig {
     }
   }
 
-  factory ApiConfig.fromEnvironment() => ApiConfig(
-    baseUrl: const String.fromEnvironment(
-      'API_BASE_URL',
-      defaultValue: productionBaseUrl,
-    ),
-  );
+  factory ApiConfig.fromEnvironment() =>
+      ApiConfig(baseUrl: const String.fromEnvironment('API_BASE_URL'));
 
   final Uri? baseUri;
   final Duration timeout;

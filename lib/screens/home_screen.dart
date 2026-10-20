@@ -23,7 +23,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    // Главной нужны услуги и только избранные проекты; запросы независимы.
+    // Читаем локальные услуги и избранные проекты через общий источник данных.
     _services = widget.api.getServices(contentLocale);
     _projects = widget.api.getProjects(contentLocale, featured: true);
   }
