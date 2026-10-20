@@ -7,7 +7,7 @@ enum ApiErrorKind {
   invalidResponse,
 }
 
-/// A transport or wire-format failure, without request bodies or credentials.
+/// Сетевая ошибка или неверный ответ сервера; тело заявки здесь не хранится.
 class ApiException implements Exception {
   const ApiException({
     required this.kind,

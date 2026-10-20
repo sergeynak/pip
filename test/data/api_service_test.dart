@@ -4,10 +4,10 @@ import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
-import 'package:pip/core/api/api_client.dart';
-import 'package:pip/core/api/api_config.dart';
-import 'package:pip/data/api_studio_repository.dart';
-import 'package:pip/data/studio_repository.dart';
+import 'package:pip/api/api_client.dart';
+import 'package:pip/api/api_config.dart';
+import 'package:pip/api/api_service.dart';
+import 'package:pip/models.dart';
 
 Map<String, Object?> project({bool detail = false}) => {
   'id': 4,
@@ -142,20 +142,19 @@ http.Response success(
   headers: {'content-type': 'application/json; charset=utf-8'},
 );
 
-ApiStudioRepository repository(
-  FutureOr<http.Response> Function(http.Request) handler,
-) => ApiStudioRepository(
-  ApiClient(
-    config: ApiConfig(baseUrl: 'https://example.test/api/v1/'),
-    client: MockClient((request) async => handler(request)),
-  ),
-);
+ApiService apiFor(FutureOr<http.Response> Function(http.Request) handler) =>
+    ApiService(
+      client: ApiClient(
+        config: ApiConfig(baseUrl: 'https://example.test/api/v1/'),
+        client: MockClient((request) async => handler(request)),
+      ),
+    );
 
 void main() {
   test(
     'projects maps pagination, search, featured and actual field languages',
     () async {
-      final repo = repository((request) {
+      final api = apiFor((request) {
         expect(request.url.path, '/api/v1/projects');
         expect(request.url.queryParameters, {
           'lang': 'kk',
@@ -166,14 +165,14 @@ void main() {
         });
         return success([project()], paginated: true, hasNext: true, page: 2);
       });
-      final page = await repo.projects(
+      final page = await api.getProjects(
         ContentLocale.kk,
-        cursor: '2',
+        page: 2,
         query: ' сайт & магазин ',
         featured: true,
       );
-      expect(repo.isDemo, isFalse);
-      expect(page.nextCursor, '3');
+      expect(api.isDemo, isFalse);
+      expect(page.nextPage, 3);
       final item = page.items.single;
       expect(item.id, '4');
       expect(item.slug, 'real-project');
@@ -187,12 +186,12 @@ void main() {
   );
 
   test('encodes detail slug as one segment and maps full gallery', () async {
-    final repo = repository((request) {
+    final api = apiFor((request) {
       expect(request.url.pathSegments, ['api', 'v1', 'projects', 'case/a b']);
       expect(request.url.queryParameters, {'lang': 'en'});
       return success(project(detail: true));
     });
-    final item = await repo.project('case/a b', ContentLocale.en);
+    final item = await api.getProject('case/a b', ContentLocale.en);
     expect(item.description.resolve(ContentLocale.en), 'Full English content.');
     expect(item.fieldLanguages['content'], 'en');
     expect(item.gallery.single.kind, 'historical');
@@ -208,16 +207,16 @@ void main() {
   test(
     'service summary and detail preserve real prices, sections and related projects',
     () async {
-      final repo = repository(
+      final api = apiFor(
         (request) => request.url.path.endsWith('/services')
             ? success([service()])
             : success(service(detail: true)),
       );
-      final summary = (await repo.services(ContentLocale.kk)).items.single;
+      final summary = (await api.getServices(ContentLocale.kk)).items.single;
       expect(summary.startingPrice, 'По составу работ');
       expect(summary.contentLanguage, 'ru');
       expect(summary.description.resolve(ContentLocale.kk), 'Краткое описание');
-      final detail = await repo.service(summary.id, ContentLocale.kk);
+      final detail = await api.getService(summary.id, ContentLocale.kk);
       expect(
         detail.description.resolve(ContentLocale.kk),
         'Подробное описание',
@@ -233,11 +232,11 @@ void main() {
   );
 
   test('article detail preserves paragraph line breaks and metadata', () async {
-    final repo = repository((request) {
+    final api = apiFor((request) {
       expect(request.url.path, '/api/v1/posts/real-post');
       return success(article(detail: true));
     });
-    final item = await repo.article('real-post', ContentLocale.ru);
+    final item = await api.getArticle('real-post', ContentLocale.ru);
     expect(item.paragraphs, ['Первый абзац.\nВторая строка.', 'Новый абзац.']);
     expect(item.coverUrl, isNull);
     expect(item.author, 'PIP');
@@ -246,8 +245,8 @@ void main() {
     expect(item.websiteUrl.toString(), 'https://example.test/blog/real-post');
   });
 
-  test('article list omits next cursor when final page is reached', () async {
-    final repo = repository((request) {
+  test('article list has no next page when final page is reached', () async {
+    final api = apiFor((request) {
       expect(request.url.path, '/api/v1/posts');
       expect(request.url.queryParameters, {
         'lang': 'ru',
@@ -256,21 +255,21 @@ void main() {
       });
       return success([article()], paginated: true);
     });
-    expect((await repo.articles(ContentLocale.ru)).nextCursor, isNull);
+    expect((await api.getArticles(ContentLocale.ru)).nextPage, isNull);
   });
 
   test(
     'config supplies contacts and form options without invented fields',
     () async {
-      final repo = repository((request) {
+      final api = apiFor((request) {
         expect(request.url.path, '/api/v1/config');
         return success(config());
       });
-      final contacts = await repo.contacts(ContentLocale.en);
+      final contacts = await api.getContacts(ContentLocale.en);
       expect(contacts.email, 'hello@example.test');
       expect(contacts.telegram.toString(), 'https://t.me/example');
       expect(contacts.about?.resolve(ContentLocale.en), 'PIP · Алматы · KZ');
-      final options = await repo.briefOptions(ContentLocale.ru);
+      final options = await api.getBriefOptions(ContentLocale.ru);
       expect(options.serviceOptions, ['Сайт', 'Интернет-магазин']);
       expect(options.nameMin, 2);
       expect(options.messageMax, 5000);
@@ -282,7 +281,7 @@ void main() {
     name: ' Клиент ',
     contact: ' @client ',
     description: '',
-    serviceIds: ['Сайт'],
+    services: ['Сайт'],
     locale: ContentLocale.kk,
   );
 
@@ -290,7 +289,7 @@ void main() {
     'brief uses exact allowed body and stable key; only a confirmed save succeeds',
     () async {
       final keys = <String?>[];
-      final repo = repository((request) {
+      final api = apiFor((request) {
         expect(request.method, 'POST');
         expect(request.url.path, '/api/v1/briefs');
         expect(request.url.queryParameters, {'lang': 'kk'});
@@ -304,7 +303,7 @@ void main() {
         return success({'accepted': true, 'id': 'saved-id'}, status: 201);
       });
       for (var i = 0; i < 2; i++) {
-        final receipt = await repo.submitBrief(
+        final receipt = await api.sendBrief(
           draft,
           idempotencyKey: 'stable-key-123',
         );
@@ -324,11 +323,11 @@ void main() {
     test(
       'does not confirm a brief with invalid receipt ($status, $data)',
       () async {
-        final repo = repository((_) => success(data, status: status));
+        final api = apiFor((_) => success(data, status: status));
         await expectLater(
-          repo.submitBrief(draft, idempotencyKey: 'stable-key-123'),
+          api.sendBrief(draft, idempotencyKey: 'stable-key-123'),
           throwsA(
-            isA<RepositoryException>().having(
+            isA<AppException>().having(
               (e) => e.code,
               'code',
               'INVALID_RESPONSE',
@@ -342,7 +341,7 @@ void main() {
   test(
     'HTTP errors preserve server message, request ID and rate-limit delay',
     () async {
-      final repo = repository(
+      final api = apiFor(
         (_) => http.Response.bytes(
           utf8.encode(
             jsonEncode({
@@ -358,9 +357,9 @@ void main() {
         ),
       );
       await expectLater(
-        repo.submitBrief(draft, idempotencyKey: 'stable-key-123'),
+        api.sendBrief(draft, idempotencyKey: 'stable-key-123'),
         throwsA(
-          isA<RepositoryException>()
+          isA<AppException>()
               .having((e) => e.message, 'message', 'Подождите.')
               .having((e) => e.statusCode, 'status', 429)
               .having((e) => e.code, 'code', 'RATE_LIMITED')
@@ -376,11 +375,11 @@ void main() {
   );
 
   test('network errors have a Russian user-facing message', () async {
-    final repo = repository((_) => throw http.ClientException('socket failed'));
+    final api = apiFor((_) => throw http.ClientException('socket failed'));
     await expectLater(
-      repo.services(ContentLocale.ru),
+      api.getServices(ContentLocale.ru),
       throwsA(
-        isA<RepositoryException>().having(
+        isA<AppException>().having(
           (e) => e.message,
           'message',
           contains('Проверьте интернет'),
@@ -400,11 +399,11 @@ void main() {
           'fieldLanguages': {'title': 'ru'},
         },
       ]) {
-        final repo = repository((_) => success([data], paginated: true));
+        final api = apiFor((_) => success([data], paginated: true));
         await expectLater(
-          repo.projects(ContentLocale.ru),
+          api.getProjects(ContentLocale.ru),
           throwsA(
-            isA<RepositoryException>().having(
+            isA<AppException>().having(
               (e) => e.code,
               'code',
               'INVALID_RESPONSE',
@@ -412,25 +411,27 @@ void main() {
           ),
         );
       }
-      final repo = repository((_) => success([project()]));
+      final api = apiFor((_) => success([project()]));
       await expectLater(
-        repo.projects(ContentLocale.ru),
-        throwsA(isA<RepositoryException>()),
+        api.getProjects(ContentLocale.ru),
+        throwsA(isA<AppException>()),
       );
     },
   );
 
-  test('invalid search and page are rejected before network work', () {
-    final repo = repository(
-      (_) => throw StateError('Must not send a request.'),
+  test('invalid search and page are rejected before network work', () async {
+    final api = apiFor((_) => throw StateError('Must not send a request.'));
+    await expectLater(
+      api.getProjects(ContentLocale.ru, query: 'a' * 101),
+      throwsA(isA<AppException>()),
     );
-    expect(
-      () => repo.projects(ContentLocale.ru, query: 'a' * 101),
-      throwsA(isA<RepositoryException>()),
+    await expectLater(
+      api.getProjects(ContentLocale.ru, page: 0),
+      throwsA(isA<AppException>()),
     );
-    expect(
-      () => repo.projects(ContentLocale.ru, cursor: '0'),
-      throwsA(isA<RepositoryException>()),
+    await expectLater(
+      api.getArticles(ContentLocale.ru, page: 100001),
+      throwsA(isA<AppException>()),
     );
   });
 }

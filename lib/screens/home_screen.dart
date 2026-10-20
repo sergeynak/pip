@@ -1,8 +1,16 @@
-part of 'studio_screens.dart';
+import 'package:flutter/material.dart';
+
+import '../api/api_service.dart';
+import '../models.dart';
+import '../widgets/brief_callout.dart';
+import '../widgets/common_widgets.dart';
+import '../widgets/project_card.dart';
+import '../widgets/service_card.dart';
+import 'navigation.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key, required this.repository, required this.onTab});
-  final StudioRepository repository;
+  const HomeScreen({super.key, required this.api, required this.onTab});
+  final ApiService api;
   final ValueChanged<int> onTab;
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -15,21 +23,22 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    _services = widget.repository.services(_locale);
-    _projects = widget.repository.projects(_locale, featured: true);
+    // Главной нужны услуги и только избранные проекты; запросы независимы.
+    _services = widget.api.getServices(contentLocale);
+    _projects = widget.api.getProjects(contentLocale, featured: true);
   }
 
   @override
   Widget build(BuildContext context) => PageBody(
     onRefresh: () async {
       setState(() {
-        _services = widget.repository.services(_locale);
-        _projects = widget.repository.projects(_locale, featured: true);
+        _services = widget.api.getServices(contentLocale);
+        _projects = widget.api.getProjects(contentLocale, featured: true);
       });
       try {
         await Future.wait([_services, _projects]);
       } catch (_) {
-        /* Rendered by AsyncContent. */
+        /* Ошибку покажет виджет AsyncContent. */
       }
     },
     children: [
@@ -51,7 +60,7 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       const SizedBox(height: 25),
       FilledButton(
-        onPressed: () => openBrief(context, widget.repository),
+        onPressed: () => openBrief(context, widget.api),
         child: const Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -71,7 +80,7 @@ class _HomeScreenState extends State<HomeScreen> {
       AsyncContent(
         future: _services,
         onRetry: () => setState(() {
-          _services = widget.repository.services(_locale);
+          _services = widget.api.getServices(contentLocale);
         }),
         builder: (page) {
           if (page.items.isEmpty) {
@@ -85,10 +94,10 @@ class _HomeScreenState extends State<HomeScreen> {
               for (final (index, service) in page.items.take(3).indexed)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 10),
-                  child: _ServiceCard(
+                  child: ServiceCard(
                     service: service,
                     index: index,
-                    repository: widget.repository,
+                    api: widget.api,
                     compact: true,
                   ),
                 ),
@@ -101,7 +110,7 @@ class _HomeScreenState extends State<HomeScreen> {
         action: 'Все',
         onAll: () => widget.onTab(2),
       ),
-      if (widget.repository.isDemo)
+      if (widget.api.isDemo)
         const Padding(
           padding: EdgeInsets.only(bottom: 14),
           child: Text(
@@ -112,7 +121,7 @@ class _HomeScreenState extends State<HomeScreen> {
       AsyncContent(
         future: _projects,
         onRetry: () => setState(() {
-          _projects = widget.repository.projects(_locale, featured: true);
+          _projects = widget.api.getProjects(contentLocale, featured: true);
         }),
         builder: (page) => Column(
           children: [
@@ -124,16 +133,13 @@ class _HomeScreenState extends State<HomeScreen> {
             for (final project in page.items.take(2))
               Padding(
                 padding: const EdgeInsets.only(bottom: 16),
-                child: _ProjectCard(
-                  project: project,
-                  repository: widget.repository,
-                ),
+                child: ProjectCard(project: project, api: widget.api),
               ),
           ],
         ),
       ),
       const SizedBox(height: 15),
-      _BriefCallout(repository: widget.repository),
+      BriefCallout(api: widget.api),
     ],
   );
 }

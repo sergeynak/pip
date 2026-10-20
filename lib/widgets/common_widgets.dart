@@ -2,7 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../data/studio_repository.dart';
+import '../api/api_service.dart';
+import '../models.dart';
+
+// Интерфейс и запрашиваемые материалы пока на русском языке.
+const contentLocale = ContentLocale.ru;
 
 abstract final class PipColors {
   static const background = Color(0xFF111118);
@@ -34,6 +38,7 @@ class DemoNotice extends StatelessWidget {
   );
 }
 
+// Единые отступы и прокрутка экрана. Если есть onRefresh, доступен свайп вниз.
 class PageBody extends StatelessWidget {
   const PageBody({super.key, required this.children, this.onRefresh});
   final List<Widget> children;
@@ -178,6 +183,8 @@ class Panel extends StatelessWidget {
   );
 }
 
+// Future хранит результат запроса. Здесь выбираем, что показать:
+// загрузку, ошибку с повтором или готовые данные через builder.
 class AsyncContent<T> extends StatelessWidget {
   const AsyncContent({
     super.key,
@@ -200,7 +207,7 @@ class AsyncContent<T> extends StatelessWidget {
       }
       if (snapshot.hasError) {
         final error = snapshot.error;
-        final missing = error is RepositoryException && error.statusCode == 404;
+        final missing = error is AppException && error.statusCode == 404;
         return Panel(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -213,7 +220,7 @@ class AsyncContent<T> extends StatelessWidget {
               Text(
                 missing
                     ? 'Возможно, материал удалён или ещё не опубликован. Вернитесь к списку и обновите его.'
-                    : error is RepositoryException
+                    : error is AppException
                     ? error.message
                     : 'Проверьте соединение и попробуйте ещё раз.',
                 style: TextStyle(color: PipColors.muted),
@@ -261,12 +268,12 @@ class EmptyContent extends StatelessWidget {
 class DetailScaffold extends StatelessWidget {
   const DetailScaffold({
     super.key,
-    required this.repository,
+    required this.api,
     required this.title,
     required this.body,
     this.onBack,
   });
-  final StudioRepository repository;
+  final ApiService api;
   final String title;
   final Widget body;
   final VoidCallback? onBack;
@@ -278,7 +285,7 @@ class DetailScaffold extends StatelessWidget {
         title,
         style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
       ),
-      bottom: repository.isDemo
+      bottom: api.isDemo
           ? const PreferredSize(
               preferredSize: Size.fromHeight(35),
               child: DemoNotice(),
@@ -481,6 +488,7 @@ class ProjectArtwork extends StatelessWidget {
   }
 }
 
+// Открываем только обычные веб-ссылки и, при явном разрешении, почту.
 Future<void> openExternal(
   BuildContext context,
   Uri uri, {
@@ -504,7 +512,7 @@ Future<void> openExternal(
   try {
     if (await launchUrl(uri, mode: LaunchMode.externalApplication)) return;
   } catch (_) {
-    // A browser or mail application may be unavailable on this device.
+    // На устройстве может не быть браузера или почтового приложения.
   }
   if (context.mounted) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -519,6 +527,7 @@ Future<void> openExternal(
   }
 }
 
+// Нажатие на изображение открывает просмотр с увеличением и перемещением.
 class GalleryImage extends StatelessWidget {
   const GalleryImage({super.key, required this.image});
   final ProjectImage image;

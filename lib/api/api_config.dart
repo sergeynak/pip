@@ -1,4 +1,4 @@
-/// Build configuration for the public Pip API.
+/// Адрес публичного API и время ожидания ответа.
 class ApiConfig {
   static const productionBaseUrl = 'https://pip.kz/api/v1';
 

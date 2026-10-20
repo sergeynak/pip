@@ -1,4 +1,4 @@
-/// The API response envelope, kept separate from future feature DTOs.
+/// Общий ответ API: данные, служебная информация и HTTP-статус.
 class ApiResponse {
   const ApiResponse({
     required this.data,
@@ -11,7 +11,7 @@ class ApiResponse {
   final ApiMeta meta;
   final int statusCode;
 
-  /// True for a successful response with no body, including HTTP 204.
+  /// Успешный ответ без тела, например HTTP 204.
   final bool isEmpty;
 }
 
@@ -86,7 +86,7 @@ class PageInfo {
   final bool hasPrevious;
 }
 
-/// Actual language of each content field; a requested language may fall back.
+/// Фактический язык каждого поля: перевод может отсутствовать.
 class FieldLanguages {
   FieldLanguages(Map<String, String> values)
     : values = Map.unmodifiable(values);

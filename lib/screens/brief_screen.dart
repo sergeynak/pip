@@ -1,12 +1,17 @@
-part of 'studio_screens.dart';
+import 'dart:async';
+import 'dart:convert';
+import 'dart:math';
+
+import 'package:flutter/material.dart';
+
+import '../api/api_service.dart';
+import '../models.dart';
+import '../widgets/common_widgets.dart';
+import 'brief_success_screen.dart';
 
 class BriefScreen extends StatefulWidget {
-  const BriefScreen({
-    super.key,
-    required this.repository,
-    this.initialServiceTitle,
-  });
-  final StudioRepository repository;
+  const BriefScreen({super.key, required this.api, this.initialServiceTitle});
+  final ApiService api;
   final String? initialServiceTitle;
   @override
   State<BriefScreen> createState() => _BriefScreenState();
@@ -36,20 +41,24 @@ class _BriefScreenState extends State<BriefScreen> {
       _contact.text.isNotEmpty ||
       _description.text.isNotEmpty ||
       _selectedServices.isNotEmpty;
-  int get _retrySeconds => _retryUntil == null
-      ? 0
-      : min(
-          max(0, _retryInitialSeconds - _retryTicks),
-          max(
-            0,
-            (_retryUntil!.difference(DateTime.now()).inMilliseconds / 1000)
-                .ceil(),
-          ),
-        );
+  int get _retrySeconds {
+    if (_retryUntil == null) return 0;
+
+    // Часы учитывают время в фоне, а таймер — прошедшие секунды без
+    // зависимости от ручного перевода часов на устройстве.
+    final remainingTime = _retryUntil!.difference(DateTime.now());
+    final remainingSeconds = (remainingTime.inMilliseconds / 1000).ceil();
+    final timerSeconds = _retryInitialSeconds - _retryTicks;
+    if (remainingSeconds <= 0 || timerSeconds <= 0) return 0;
+    if (remainingSeconds < timerSeconds) return remainingSeconds;
+    return timerSeconds;
+  }
 
   @override
   void initState() {
     super.initState();
+    // Из услуги переносим только описание: допустимые названия направлений
+    // отдельно загрузятся из настроек API.
     if (widget.initialServiceTitle != null) {
       _description.text = 'Интересует услуга «${widget.initialServiceTitle}».';
     }
@@ -60,7 +69,8 @@ class _BriefScreenState extends State<BriefScreen> {
   }
 
   Future<BriefOptions> _loadOptions() async {
-    final options = await widget.repository.briefOptions(_locale);
+    // Сервер сообщает список услуг и ограничения полей формы.
+    final options = await widget.api.getBriefOptions(contentLocale);
     _options = options;
     return options;
   }
@@ -77,6 +87,8 @@ class _BriefScreenState extends State<BriefScreen> {
   void _draftChanged() => setState(() => _error = null);
 
   void _startCooldown(Duration duration) {
+    // После ошибки 429 ждём указанное сервером время. Повтора запроса нет:
+    // отправка снова станет доступна только по нажатию пользователя.
     _retryTimer?.cancel();
     _retryUntil = DateTime.now().add(duration);
     _retryInitialSeconds = (duration.inMilliseconds / 1000).ceil();
@@ -94,6 +106,7 @@ class _BriefScreenState extends State<BriefScreen> {
   }
 
   Future<void> _confirmDiscard() async {
+    // Не теряем введённые данные при случайном нажатии «Назад».
     if (_submitting) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Дождитесь результата отправки заявки.')),
@@ -132,14 +145,16 @@ class _BriefScreenState extends State<BriefScreen> {
 
   String _newKey() {
     final random = Random.secure();
-    final bytes = List<int>.generate(16, (_) => random.nextInt(256));
-    bytes[6] = (bytes[6] & 0x0f) | 0x40;
-    bytes[8] = (bytes[8] & 0x3f) | 0x80;
-    final hex = bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join();
-    return '${hex.substring(0, 8)}-${hex.substring(8, 12)}-${hex.substring(12, 16)}-${hex.substring(16, 20)}-${hex.substring(20)}';
+    String key = '';
+    // 32 случайных шестнадцатеричных символа, без персональных данных.
+    for (int i = 0; i < 32; i++) {
+      key += random.nextInt(16).toRadixString(16);
+    }
+    return key;
   }
 
   Future<void> _submit() async {
+    // Сначала проверяем форму и блокировку повторной отправки.
     if (_submitting ||
         _retrySeconds > 0 ||
         _options == null ||
@@ -147,19 +162,21 @@ class _BriefScreenState extends State<BriefScreen> {
       return;
     }
     FocusScope.of(context).unfocus();
+    final selectedServices = _selectedServices.toList();
+    selectedServices.sort();
     final draft = BriefDraft(
       name: _name.text.trim(),
       contact: _contact.text.trim(),
-      serviceIds: _selectedServices.toList()..sort(),
+      services: selectedServices,
       description: _description.text.trim(),
-      locale: _locale,
+      locale: contentLocale,
     );
-    // Selection/focus changes are not request changes. Reuse the key after an
-    // uncertain response unless the normalized payload itself has changed.
+    // Одинаковые данные получают прежний ключ: сервер не создаст дубль
+    // после сетевой ошибки. Перемещение курсора данные заявки не меняет.
     final fingerprint = jsonEncode([
       draft.name,
       draft.contact,
-      draft.serviceIds,
+      draft.services,
       draft.description,
       draft.locale.name,
     ]);
@@ -172,7 +189,7 @@ class _BriefScreenState extends State<BriefScreen> {
       _error = null;
     });
     try {
-      final receipt = await widget.repository.submitBrief(
+      final receipt = await widget.api.sendBrief(
         draft,
         idempotencyKey: _idempotencyKey!,
       );
@@ -182,13 +199,10 @@ class _BriefScreenState extends State<BriefScreen> {
       _allowPop = true;
       Navigator.of(context).pushReplacement(
         MaterialPageRoute<void>(
-          builder: (_) => BriefSuccessScreen(
-            repository: widget.repository,
-            receipt: receipt,
-          ),
+          builder: (_) => BriefSuccessScreen(api: widget.api, receipt: receipt),
         ),
       );
-    } on RepositoryException catch (error) {
+    } on AppException catch (error) {
       if (mounted) {
         setState(() {
           _error = error.message;
@@ -216,7 +230,7 @@ class _BriefScreenState extends State<BriefScreen> {
       if (!didPop) _confirmDiscard();
     },
     child: DetailScaffold(
-      repository: widget.repository,
+      api: widget.api,
       title: 'Обсудить проект',
       onBack: () {
         if (_hasDraft || _submitting) {
@@ -235,7 +249,7 @@ class _BriefScreenState extends State<BriefScreen> {
               subtitle:
                   'Пара слов о задаче — и мы поймём, чем можем быть полезны.',
             ),
-            if (widget.repository.isDemo)
+            if (widget.api.isDemo)
               const Padding(
                 padding: EdgeInsets.only(bottom: 24),
                 child: Panel(
@@ -444,60 +458,6 @@ class _BriefScreenState extends State<BriefScreen> {
           ],
         ),
       ),
-    ),
-  );
-}
-
-class BriefSuccessScreen extends StatelessWidget {
-  const BriefSuccessScreen({
-    super.key,
-    required this.repository,
-    required this.receipt,
-  });
-  final StudioRepository repository;
-  final BriefReceipt receipt;
-  @override
-  Widget build(BuildContext context) => DetailScaffold(
-    repository: repository,
-    title: 'Заявка',
-    body: PageBody(
-      children: [
-        const SizedBox(height: 45),
-        const Align(
-          alignment: Alignment.centerLeft,
-          child: CircleAvatar(
-            radius: 35,
-            backgroundColor: PipColors.accent,
-            child: Icon(Icons.check_rounded, size: 36, color: Colors.white),
-          ),
-        ),
-        const SizedBox(height: 28),
-        const Text(
-          'Заявка\nотправлена.',
-          style: TextStyle(
-            fontSize: 38,
-            height: 1.15,
-            fontWeight: FontWeight.w700,
-            letterSpacing: -1,
-          ),
-        ),
-        const SizedBox(height: 22),
-        const Text(
-          'Спасибо за вашу идею. Студия получила заявку и сможет связаться с вами по указанному контакту.',
-          style: TextStyle(color: PipColors.muted, height: 1.7, fontSize: 16),
-        ),
-        const SizedBox(height: 18),
-        Text(
-          'Номер заявки: ${receipt.id}',
-          style: const TextStyle(color: PipColors.muted, fontSize: 12),
-        ),
-        const SizedBox(height: 32),
-        FilledButton(
-          onPressed: () =>
-              Navigator.of(context).popUntil((route) => route.isFirst),
-          child: const Text('Вернуться в приложение'),
-        ),
-      ],
     ),
   );
 }

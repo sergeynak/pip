@@ -1,13 +1,30 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter/material.dart';
 
-import '../data/studio_repository.dart';
-import '../features/studio_screens.dart';
-import '../shared/studio_widgets.dart';
+import 'api/api_service.dart';
+import 'screens/blog_screen.dart';
+import 'screens/contacts_screen.dart';
+import 'screens/home_screen.dart';
+import 'screens/navigation.dart';
+import 'screens/portfolio_screen.dart';
+import 'screens/services_screen.dart';
+import 'widgets/common_widgets.dart';
 
-class PipApp extends StatelessWidget {
-  const PipApp({super.key, this.repository = const DemoStudioRepository()});
-  final StudioRepository repository;
+class PipApp extends StatefulWidget {
+  const PipApp({super.key, required this.api});
+  final ApiService api;
+
+  @override
+  State<PipApp> createState() => _PipAppState();
+}
+
+class _PipAppState extends State<PipApp> {
+  @override
+  void dispose() {
+    // Освобождаем HTTP-клиент, когда приложение больше не используется.
+    widget.api.close();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -100,14 +117,14 @@ class PipApp extends StatelessWidget {
           thickness: 1,
         ),
       ),
-      home: StudioShell(repository: repository),
+      home: StudioShell(api: widget.api),
     );
   }
 }
 
 class StudioShell extends StatefulWidget {
-  const StudioShell({super.key, required this.repository});
-  final StudioRepository repository;
+  const StudioShell({super.key, required this.api});
+  final ApiService api;
 
   @override
   State<StudioShell> createState() => _StudioShellState();
@@ -120,15 +137,13 @@ class _StudioShellState extends State<StudioShell> {
   @override
   void initState() {
     super.initState();
+    // Создаём вкладки один раз: при переключении поиск и прокрутка сохранятся.
     _pages = [
-      HomeScreen(
-        repository: widget.repository,
-        onTab: (i) => setState(() => _index = i),
-      ),
-      ServicesScreen(repository: widget.repository),
-      PortfolioScreen(repository: widget.repository),
-      BlogScreen(repository: widget.repository),
-      ContactsScreen(repository: widget.repository),
+      HomeScreen(api: widget.api, onTab: (i) => setState(() => _index = i)),
+      ServicesScreen(api: widget.api),
+      PortfolioScreen(api: widget.api),
+      BlogScreen(api: widget.api),
+      ContactsScreen(api: widget.api),
     ];
   }
 
@@ -165,13 +180,13 @@ class _StudioShellState extends State<StudioShell> {
       ),
       actions: [
         IconButton.filledTonal(
-          onPressed: () => openBrief(context, widget.repository),
+          onPressed: () => openBrief(context, widget.api),
           tooltip: 'Обсудить проект',
           icon: const Icon(Icons.north_east_rounded, size: 21),
         ),
         const SizedBox(width: 15),
       ],
-      bottom: widget.repository.isDemo
+      bottom: widget.api.isDemo
           ? const PreferredSize(
               preferredSize: Size.fromHeight(35),
               child: DemoNotice(),

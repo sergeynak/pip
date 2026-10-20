@@ -1,6 +1,6 @@
 plugins {
     id("com.android.application")
-    // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
+    // Плагин Flutter подключается после плагинов Android и Kotlin.
     id("dev.flutter.flutter-gradle-plugin")
 }
 
@@ -15,24 +15,20 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
+        // Уникальное имя приложения в Android.
         applicationId = "kz.pip.pip"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
+        // Поддерживаемые версии Android берём из настроек Flutter.
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
-        // Uses the version code from pubspec.yaml. When using split APKs, 1000 * ABI_VERSION
-        // is added automatically by Flutter. (https://developer.android.com/studio/build/configure-apk-splits#configure-APK-versions)
-        // You can force using the value of versionCode by specifying the `-P force-version-code-ignoring-abi=true`
-        // flag during build.
+        // Номер и название версии задаются в pubspec.yaml.
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
 
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
+            // Пока используется отладочная подпись. Перед публикацией в магазине
+            // здесь нужно настроить собственный ключ подписи приложения.
             signingConfig = signingConfigs.getByName("debug")
         }
     }

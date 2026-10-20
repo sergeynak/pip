@@ -6,15 +6,17 @@ version: 0.1.0+1
 environment:
   sdk: ^3.10.0
 
+# Библиотеки, которые нужны приложению.
 dependencies:
   cupertino_icons: 1.0.8
   flutter:
     sdk: flutter
   flutter_localizations:
     sdk: flutter
-  http: ^1.6.0
-  url_launcher: ^6.3.3
+  http: ^1.6.0 # Запросы к API сайта.
+  url_launcher: ^6.3.3 # Открытие сайта, Telegram и почты.
 
+# Инструменты для проверки кода и тестов.
 dev_dependencies:
   flutter_test:
     sdk: flutter

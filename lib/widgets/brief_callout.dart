@@ -1,8 +1,12 @@
-part of 'studio_screens.dart';
+import 'package:flutter/material.dart';
 
-class _BriefCallout extends StatelessWidget {
-  const _BriefCallout({required this.repository});
-  final StudioRepository repository;
+import '../api/api_service.dart';
+import '../screens/navigation.dart';
+import 'common_widgets.dart';
+
+class BriefCallout extends StatelessWidget {
+  const BriefCallout({super.key, required this.api});
+  final ApiService api;
   @override
   Widget build(BuildContext context) => Panel(
     child: Column(
@@ -23,7 +27,7 @@ class _BriefCallout extends StatelessWidget {
         SizedBox(
           width: double.infinity,
           child: FilledButton(
-            onPressed: () => openBrief(context, repository),
+            onPressed: () => openBrief(context, api),
             child: const Text('Оставить заявку'),
           ),
         ),

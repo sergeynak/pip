@@ -1,30 +1,36 @@
-part of 'studio_screens.dart';
+import 'package:flutter/material.dart';
+
+import '../api/api_service.dart';
+import '../models.dart';
+import '../widgets/brief_callout.dart';
+import '../widgets/common_widgets.dart';
 
 class ContactsScreen extends StatefulWidget {
-  const ContactsScreen({super.key, required this.repository});
-  final StudioRepository repository;
+  const ContactsScreen({super.key, required this.api});
+  final ApiService api;
   @override
   State<ContactsScreen> createState() => _ContactsScreenState();
 }
 
 class _ContactsScreenState extends State<ContactsScreen> {
-  late Future<StudioContact> _future;
+  late Future<StudioContact> _contactsFuture;
   @override
   void initState() {
     super.initState();
-    _future = widget.repository.contacts(_locale);
+    // Контакты читаются из общей конфигурации сайта.
+    _contactsFuture = widget.api.getContacts(contentLocale);
   }
 
   @override
   Widget build(BuildContext context) => PageBody(
     onRefresh: () async {
       setState(() {
-        _future = widget.repository.contacts(_locale);
+        _contactsFuture = widget.api.getContacts(contentLocale);
       });
       try {
-        await _future;
+        await _contactsFuture;
       } catch (_) {
-        /* Rendered by AsyncContent. */
+        /* Ошибку покажет виджет AsyncContent. */
       }
     },
     children: [
@@ -34,9 +40,9 @@ class _ContactsScreenState extends State<ContactsScreen> {
         subtitle: 'Расскажите о своей идее. Всё начинается с разговора.',
       ),
       AsyncContent(
-        future: _future,
+        future: _contactsFuture,
         onRetry: () => setState(() {
-          _future = widget.repository.contacts(_locale);
+          _contactsFuture = widget.api.getContacts(contentLocale);
         }),
         builder: (contacts) => Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -86,7 +92,7 @@ class _ContactsScreenState extends State<ContactsScreen> {
                   ),
                   const SizedBox(height: 13),
                   Text(
-                    contacts.about?.resolve(_locale) ??
+                    contacts.about?.resolve(contentLocale) ??
                         'Информация о студии пока не опубликована.',
                     style: const TextStyle(color: PipColors.muted, height: 1.7),
                   ),
@@ -97,7 +103,7 @@ class _ContactsScreenState extends State<ContactsScreen> {
         ),
       ),
       const SizedBox(height: 30),
-      _BriefCallout(repository: widget.repository),
+      BriefCallout(api: widget.api),
     ],
   );
 }

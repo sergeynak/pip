@@ -7,10 +7,8 @@ import 'api_config.dart';
 import 'api_exception.dart';
 import 'api_response.dart';
 
-/// Route-agnostic JSON transport. It never retries requests automatically.
-///
-/// An injected [client] remains owned by its caller. Without injection, call
-/// [close] when this client is no longer needed.
+/// Выполняет HTTP-запросы с JSON без автоматической повторной отправки.
+/// Переданный [client] закрывает его владелец; созданный здесь — метод [close].
 class ApiClient {
   ApiClient({required this.config, http.Client? client})
     : _client = client ?? http.Client(),
@@ -25,8 +23,8 @@ class ApiClient {
     Map<String, String>? queryParameters,
   }) => _request('GET', path, queryParameters: queryParameters);
 
-  /// Reuse the same [idempotencyKey] and body for retries of one submission.
-  /// Create a new key for a new submission. The transport never creates keys.
+  /// Для повтора заявки передайте прежние [idempotencyKey] и тело запроса.
+  /// Новый ключ создаёт экран только для новой заявки.
   Future<ApiResponse> post(
     String path, {
     Object? body,
@@ -132,7 +130,7 @@ class ApiClient {
       text = utf8.decode(response.bodyBytes).trim();
       if (text.isNotEmpty) decoded = jsonDecode(text);
     } on FormatException {
-      // HTTP errors must remain HTTP errors, even with a proxy's HTML body.
+      // Ошибка HTTP остаётся ошибкой HTTP, даже если сервер прислал HTML.
     }
     final envelope = decoded is Map<String, dynamic> ? decoded : null;
     final meta = envelope?['meta'];
@@ -150,8 +148,7 @@ class ApiClient {
           ? Map<String, Object?>.unmodifiable(rawErrorDetails)
           : const <String, Object?>{};
       final retryFromBody = errorDetails['retryAfter'];
-      // Browser CORS policies may hide Retry-After, while the same value in
-      // the documented JSON body remains available to the web client.
+      // Браузер может скрыть заголовок Retry-After. Тогда берём время из JSON.
       final retrySeconds =
           int.tryParse(response.headers['retry-after'] ?? '') ??
           (retryFromBody is int ? retryFromBody : null);

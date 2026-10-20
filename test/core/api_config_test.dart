@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:pip/core/api/api_config.dart';
+import 'package:pip/api/api_config.dart';
 
 void main() {
   test('application environment defaults to the production API', () {

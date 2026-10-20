@@ -4,10 +4,10 @@ import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
-import 'package:pip/core/api/api_client.dart';
-import 'package:pip/core/api/api_config.dart';
-import 'package:pip/core/api/api_exception.dart';
-import 'package:pip/core/api/api_response.dart';
+import 'package:pip/api/api_client.dart';
+import 'package:pip/api/api_config.dart';
+import 'package:pip/api/api_exception.dart';
+import 'package:pip/api/api_response.dart';
 
 void main() {
   ApiClient clientFor(

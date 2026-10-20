@@ -1,71 +1,62 @@
 import 'dart:io';
 
-import 'package:pip/core/api/api_client.dart';
-import 'package:pip/core/api/api_config.dart';
-import 'package:pip/data/api_studio_repository.dart';
-import 'package:pip/data/studio_repository.dart';
+import 'package:pip/api/api_service.dart';
+import 'package:pip/models.dart';
 
-/// Manual smoke check of the public API. All operations below are GET requests.
-/// Never send a sample brief to the production CMS from automated checks.
+/// Ручная проверка публичного API. Здесь выполняются только GET-запросы.
+/// Тестовые заявки в рабочую CMS этим скриптом не отправляются.
 Future<void> main() async {
-  final client = ApiClient(config: ApiConfig.fromEnvironment());
-  final repository = ApiStudioRepository(client);
+  final api = ApiService();
   const locale = ContentLocale.ru;
   try {
-    final contacts = await repository.contacts(locale);
-    final options = await repository.briefOptions(locale);
+    final contacts = await api.getContacts(locale);
+    final options = await api.getBriefOptions(locale);
     stdout.writeln(
       'GET config: ${contacts.email != null ? 'contacts OK' : 'no email'}, '
       '${options.serviceOptions.length} brief options',
     );
 
-    final services = await repository.services(locale);
+    final services = await api.getServices(locale);
     stdout.writeln('GET services: ${services.items.length} items');
     if (services.items.isNotEmpty) {
-      final detail = await repository.service(services.items.first.id, locale);
+      final detail = await api.getService(services.items.first.id, locale);
       stdout.writeln(
         'GET service detail: ${detail.sections.length} sections, '
         '${detail.projects.length} related projects',
       );
     }
 
-    final projects = await repository.projects(locale);
+    final projects = await api.getProjects(locale);
     stdout.writeln('GET projects: ${projects.items.length} items');
-    if (projects.nextCursor != null) {
-      final next = await repository.projects(
-        locale,
-        cursor: projects.nextCursor,
-      );
+    if (projects.nextPage != null) {
+      final next = await api.getProjects(locale, page: projects.nextPage!);
       stdout.writeln('GET projects page 2: ${next.items.length} items');
     }
     if (projects.items.isNotEmpty) {
-      final detail = await repository.project(
-        projects.items.first.slug,
-        locale,
-      );
+      final detail = await api.getProject(projects.items.first.slug, locale);
       stdout.writeln(
         'GET project detail: ${detail.gallery.length} gallery images',
       );
     }
 
-    final featured = await repository.projects(locale, featured: true);
+    final featured = await api.getProjects(locale, featured: true);
     stdout.writeln('GET featured projects: ${featured.items.length} items');
-    final posts = await repository.articles(locale);
+    final posts = await api.getArticles(locale);
     stdout.writeln('GET posts: ${posts.items.length} items');
     if (posts.items.isNotEmpty) {
-      final detail = await repository.article(posts.items.first.slug, locale);
+      final detail = await api.getArticle(posts.items.first.slug, locale);
       stdout.writeln(
         'GET post detail: ${detail.paragraphs.length} text paragraphs',
       );
     }
     stdout.writeln('Public API read check passed. No brief was submitted.');
-  } on RepositoryException catch (error) {
+  } on AppException catch (error) {
     stderr.writeln('API check failed: ${error.message}');
     exitCode = 1;
   } catch (error) {
     stderr.writeln('API check failed: ${error.runtimeType}');
     exitCode = 1;
   } finally {
-    client.close();
+    api.close();
   }
 }
