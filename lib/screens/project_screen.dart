@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 
-import '../api/api_service.dart';
+import '../data/demo_data.dart';
 import '../models.dart';
 import '../widgets/brief_callout.dart';
 import '../widgets/common_widgets.dart';
 
 class ProjectScreen extends StatefulWidget {
-  const ProjectScreen({super.key, required this.project, required this.api});
+  const ProjectScreen({super.key, required this.project, required this.data});
   final StudioProject project;
-  final ApiService api;
+  final DemoData data;
   @override
   State<ProjectScreen> createState() => _ProjectScreenState();
 }
@@ -23,7 +23,7 @@ class _ProjectScreenState extends State<ProjectScreen> {
   }
 
   Future<StudioProject> _loadProject() {
-    return widget.api.getProject(widget.project.slug, contentLocale);
+    return widget.data.getProject(widget.project.slug, contentLocale);
   }
 
   Future<void> _refreshProject() async {
@@ -40,7 +40,7 @@ class _ProjectScreenState extends State<ProjectScreen> {
 
   @override
   Widget build(BuildContext context) => DetailScaffold(
-    api: widget.api,
+    data: widget.data,
     title: 'Проект',
     body: PageBody(
       onRefresh: _refreshProject,
@@ -71,7 +71,7 @@ class _ProjectScreenState extends State<ProjectScreen> {
                   child: ProjectArtwork(
                     variant: project.visual,
                     imageUrl: project.coverUrl,
-                    demo: widget.api.isDemo,
+                    demo: widget.data.isDemo,
                   ),
                 ),
               ),
@@ -85,7 +85,7 @@ class _ProjectScreenState extends State<ProjectScreen> {
                 ),
               ),
               const SectionHeading('Галерея'),
-              if (project.gallery.isEmpty && widget.api.isDemo)
+              if (project.gallery.isEmpty && widget.data.isDemo)
                 for (int index = 0; index < 2; index++)
                   Padding(
                     padding: const EdgeInsets.only(bottom: 18),
@@ -123,7 +123,7 @@ class _ProjectScreenState extends State<ProjectScreen> {
                 ),
               for (final image in project.gallery) GalleryImage(image: image),
               const SizedBox(height: 18),
-              if (widget.api.isDemo)
+              if (widget.data.isDemo)
                 const OutlinedButton(
                   onPressed: null,
                   child: Text('Ссылка на сайт · пример'),
@@ -140,7 +140,7 @@ class _ProjectScreenState extends State<ProjectScreen> {
                   style: TextStyle(color: PipColors.muted, fontSize: 12),
                 ),
               const SizedBox(height: 30),
-              BriefCallout(api: widget.api),
+              BriefCallout(data: widget.data),
             ],
           ),
         ),

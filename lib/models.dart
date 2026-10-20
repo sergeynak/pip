@@ -123,7 +123,6 @@ class BriefOptions {
     this.contactMax = 200,
     this.messageMax = 5000,
     this.servicesMax = 6,
-    this.idempotencyTtlSeconds = 86400,
   });
   final List<String> serviceOptions;
   final int nameMin;
@@ -132,7 +131,6 @@ class BriefOptions {
   final int contactMax;
   final int messageMax;
   final int servicesMax;
-  final int idempotencyTtlSeconds;
 }
 
 class ContentPage<T> {
@@ -143,41 +141,9 @@ class ContentPage<T> {
   final int? nextPage;
 }
 
-class BriefDraft {
-  const BriefDraft({
-    required this.name,
-    required this.contact,
-    required this.services,
-    required this.description,
-    required this.locale,
-  });
-  final String name;
-  final String contact;
-
-  /// Названия выбранных вариантов из настроек формы /config.
-  final List<String> services;
-  final String description;
-  final ContentLocale locale;
-}
-
-class BriefReceipt {
-  const BriefReceipt({required this.id});
-  final String id;
-}
-
 class AppException implements Exception {
-  const AppException(
-    this.message, {
-    this.code,
-    this.statusCode,
-    this.requestId,
-    this.retryAfter,
-  });
+  const AppException(this.message);
   final String message;
-  final String? code;
-  final int? statusCode;
-  final String? requestId;
-  final Duration? retryAfter;
   @override
   String toString() => message;
 }

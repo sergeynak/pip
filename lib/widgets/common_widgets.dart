@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../api/api_service.dart';
+import '../data/demo_data.dart';
 import '../models.dart';
 
 // Интерфейс и запрашиваемые материалы пока на русском языке.
@@ -208,22 +208,19 @@ class AsyncContent<T> extends StatelessWidget {
       }
       if (snapshot.hasError) {
         final error = snapshot.error;
-        final missing = error is AppException && error.statusCode == 404;
         return Panel(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                missing ? 'Материал недоступен' : 'Не удалось загрузить данные',
+              const Text(
+                'Не удалось показать данные',
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
               ),
               const SizedBox(height: 10),
               Text(
-                missing
-                    ? 'Возможно, материал удалён или ещё не опубликован. Вернитесь к списку и обновите его.'
-                    : error is AppException
+                error is AppException
                     ? error.message
-                    : 'Проверьте соединение и попробуйте ещё раз.',
+                    : 'Попробуйте открыть этот раздел ещё раз.',
                 style: TextStyle(color: PipColors.muted),
               ),
               const SizedBox(height: 16),
@@ -269,12 +266,12 @@ class EmptyContent extends StatelessWidget {
 class DetailScaffold extends StatelessWidget {
   const DetailScaffold({
     super.key,
-    required this.api,
+    required this.data,
     required this.title,
     required this.body,
     this.onBack,
   });
-  final ApiService api;
+  final DemoData data;
   final String title;
   final Widget body;
   final VoidCallback? onBack;
@@ -286,7 +283,7 @@ class DetailScaffold extends StatelessWidget {
         title,
         style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
       ),
-      bottom: api.isDemo
+      bottom: data.isDemo
           ? const PreferredSize(
               preferredSize: Size.fromHeight(35),
               child: DemoNotice(),

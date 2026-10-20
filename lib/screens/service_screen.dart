@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 
-import '../api/api_service.dart';
+import '../data/demo_data.dart';
 import '../models.dart';
 import '../widgets/common_widgets.dart';
 import '../widgets/project_card.dart';
 import 'navigation.dart';
 
 class ServiceScreen extends StatefulWidget {
-  const ServiceScreen({super.key, required this.service, required this.api});
+  const ServiceScreen({super.key, required this.service, required this.data});
   final StudioService service;
-  final ApiService api;
+  final DemoData data;
   @override
   State<ServiceScreen> createState() => _ServiceScreenState();
 }
@@ -24,7 +24,7 @@ class _ServiceScreenState extends State<ServiceScreen> {
   }
 
   Future<StudioService> _loadService() {
-    return widget.api.getService(widget.service.id, contentLocale);
+    return widget.data.getService(widget.service.id, contentLocale);
   }
 
   Future<void> _refreshService() async {
@@ -41,7 +41,7 @@ class _ServiceScreenState extends State<ServiceScreen> {
 
   @override
   Widget build(BuildContext context) => DetailScaffold(
-    api: widget.api,
+    data: widget.data,
     title: 'Направление',
     body: PageBody(
       onRefresh: _refreshService,
@@ -52,7 +52,7 @@ class _ServiceScreenState extends State<ServiceScreen> {
           builder: (service) => Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Eyebrow(widget.api.isDemo ? 'ПРИМЕР УСЛУГИ' : 'УСЛУГА'),
+              Eyebrow(widget.data.isDemo ? 'ПРИМЕР УСЛУГИ' : 'УСЛУГА'),
               const SizedBox(height: 16),
               Text(
                 service.title.resolve(contentLocale),
@@ -81,7 +81,7 @@ class _ServiceScreenState extends State<ServiceScreen> {
               FilledButton.icon(
                 onPressed: () => openBrief(
                   context,
-                  widget.api,
+                  widget.data,
                   serviceTitle: service.title.resolve(contentLocale),
                 ),
                 icon: const Icon(Icons.north_east_rounded, size: 18),
@@ -133,7 +133,7 @@ class _ServiceScreenState extends State<ServiceScreen> {
                 for (final project in service.projects)
                   Padding(
                     padding: const EdgeInsets.only(bottom: 14),
-                    child: ProjectCard(project: project, api: widget.api),
+                    child: ProjectCard(project: project, data: widget.data),
                   ),
               ],
               if (service.faq.isNotEmpty)

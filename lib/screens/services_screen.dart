@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 
-import '../api/api_service.dart';
+import '../data/demo_data.dart';
 import '../models.dart';
 import '../widgets/brief_callout.dart';
 import '../widgets/common_widgets.dart';
 import '../widgets/service_card.dart';
 
 class ServicesScreen extends StatefulWidget {
-  const ServicesScreen({super.key, required this.api});
-  final ApiService api;
+  const ServicesScreen({super.key, required this.data});
+  final DemoData data;
   @override
   State<ServicesScreen> createState() => _ServicesScreenState();
 }
@@ -19,14 +19,14 @@ class _ServicesScreenState extends State<ServicesScreen> {
   void initState() {
     super.initState();
     // Сохраняем Future, чтобы перерисовка не запускала повторное чтение данных.
-    _servicesFuture = widget.api.getServices(contentLocale);
+    _servicesFuture = widget.data.getServices(contentLocale);
   }
 
   @override
   Widget build(BuildContext context) => PageBody(
     onRefresh: () async {
       setState(() {
-        _servicesFuture = widget.api.getServices(contentLocale);
+        _servicesFuture = widget.data.getServices(contentLocale);
       });
       try {
         await _servicesFuture;
@@ -40,7 +40,7 @@ class _ServicesScreenState extends State<ServicesScreen> {
         title: 'Услуги\nи возможности.',
         subtitle: 'Выберите направление — вместе найдём подход к вашей задаче.',
       ),
-      if (widget.api.isDemo)
+      if (widget.data.isDemo)
         const Padding(
           padding: EdgeInsets.only(bottom: 20),
           child: Text(
@@ -51,7 +51,7 @@ class _ServicesScreenState extends State<ServicesScreen> {
       AsyncContent(
         future: _servicesFuture,
         onRetry: () => setState(() {
-          _servicesFuture = widget.api.getServices(contentLocale);
+          _servicesFuture = widget.data.getServices(contentLocale);
         }),
         builder: (page) => Column(
           children: [
@@ -66,14 +66,14 @@ class _ServicesScreenState extends State<ServicesScreen> {
                 child: ServiceCard(
                   service: service,
                   index: index,
-                  api: widget.api,
+                  data: widget.data,
                 ),
               ),
           ],
         ),
       ),
       const SizedBox(height: 18),
-      BriefCallout(api: widget.api),
+      BriefCallout(data: widget.data),
     ],
   );
 }

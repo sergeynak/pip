@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 
-import '../api/api_service.dart';
+import '../data/demo_data.dart';
 import '../models.dart';
 import '../widgets/common_widgets.dart';
 import 'article_screen.dart';
 
 class BlogScreen extends StatefulWidget {
-  const BlogScreen({super.key, required this.api});
-  final ApiService api;
+  const BlogScreen({super.key, required this.data});
+  final DemoData data;
   @override
   State<BlogScreen> createState() => _BlogScreenState();
 }
@@ -31,7 +31,7 @@ class _BlogScreenState extends State<BlogScreen> {
   Future<ContentPage<StudioArticle>> _loadArticles() async {
     _requestVersion++;
     final requestVersion = _requestVersion;
-    final page = await widget.api.getArticles(contentLocale);
+    final page = await widget.data.getArticles(contentLocale);
     // Ответ от предыдущего обновления больше не меняет текущую пагинацию.
     if (requestVersion != _requestVersion) return page;
     _nextPage = page.nextPage;
@@ -52,7 +52,7 @@ class _BlogScreenState extends State<BlogScreen> {
       _paginationError = null;
     });
     try {
-      final page = await widget.api.getArticles(
+      final page = await widget.data.getArticles(
         contentLocale,
         page: _nextPage!,
       );
@@ -124,7 +124,7 @@ class _BlogScreenState extends State<BlogScreen> {
                   onTap: () => Navigator.of(context).push(
                     MaterialPageRoute<void>(
                       builder: (_) =>
-                          ArticleScreen(article: article, api: widget.api),
+                          ArticleScreen(article: article, data: widget.data),
                     ),
                   ),
                   child: Column(
@@ -162,7 +162,7 @@ class _BlogScreenState extends State<BlogScreen> {
                             ),
                           ),
                           const Spacer(),
-                          if (widget.api.isDemo) const ExampleTag(),
+                          if (widget.data.isDemo) const ExampleTag(),
                         ],
                       ),
                       const SizedBox(height: 28),

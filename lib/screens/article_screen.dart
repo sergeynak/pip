@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 
-import '../api/api_service.dart';
+import '../data/demo_data.dart';
 import '../models.dart';
 import '../widgets/brief_callout.dart';
 import '../widgets/common_widgets.dart';
 
 class ArticleScreen extends StatefulWidget {
-  const ArticleScreen({super.key, required this.article, required this.api});
+  const ArticleScreen({super.key, required this.article, required this.data});
   final StudioArticle article;
-  final ApiService api;
+  final DemoData data;
   @override
   State<ArticleScreen> createState() => _ArticleScreenState();
 }
@@ -23,7 +23,7 @@ class _ArticleScreenState extends State<ArticleScreen> {
   }
 
   Future<StudioArticle> _loadArticle() {
-    return widget.api.getArticle(widget.article.slug, contentLocale);
+    return widget.data.getArticle(widget.article.slug, contentLocale);
   }
 
   Future<void> _refreshArticle() async {
@@ -39,7 +39,7 @@ class _ArticleScreenState extends State<ArticleScreen> {
 
   @override
   Widget build(BuildContext context) => DetailScaffold(
-    api: widget.api,
+    data: widget.data,
     title: 'Блог',
     body: PageBody(
       onRefresh: _refreshArticle,
@@ -94,7 +94,7 @@ class _ArticleScreenState extends State<ArticleScreen> {
                     ),
                   ),
                 ),
-              if (widget.api.isDemo)
+              if (widget.data.isDemo)
                 const Padding(
                   padding: EdgeInsets.only(bottom: 22),
                   child: Text(
@@ -123,7 +123,7 @@ class _ArticleScreenState extends State<ArticleScreen> {
                   label: const Text('Читать на сайте'),
                 ),
               const SizedBox(height: 24),
-              BriefCallout(api: widget.api),
+              BriefCallout(data: widget.data),
             ],
           ),
         ),

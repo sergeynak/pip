@@ -2,14 +2,14 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
-import '../api/api_service.dart';
+import '../data/demo_data.dart';
 import '../models.dart';
 import '../widgets/common_widgets.dart';
 import '../widgets/project_card.dart';
 
 class PortfolioScreen extends StatefulWidget {
-  const PortfolioScreen({super.key, required this.api});
-  final ApiService api;
+  const PortfolioScreen({super.key, required this.data});
+  final DemoData data;
   @override
   State<PortfolioScreen> createState() => _PortfolioScreenState();
 }
@@ -44,7 +44,7 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
     // Номер загрузки отличает актуальный поиск от устаревшего результата.
     _requestVersion++;
     final requestVersion = _requestVersion;
-    final page = await widget.api.getProjects(
+    final page = await widget.data.getProjects(
       contentLocale,
       query: _search.text,
     );
@@ -98,7 +98,7 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
       _paginationError = null;
     });
     try {
-      final page = await widget.api.getProjects(
+      final page = await widget.data.getProjects(
         contentLocale,
         query: _search.text,
         page: _nextPage!,
@@ -156,7 +156,7 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
         ),
       ),
       const SizedBox(height: 22),
-      if (widget.api.isDemo)
+      if (widget.data.isDemo)
         const Padding(
           padding: EdgeInsets.only(bottom: 14),
           child: Text(
@@ -185,7 +185,7 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
               for (final project in [...page.items, ..._moreProjects])
                 Padding(
                   padding: const EdgeInsets.only(bottom: 16),
-                  child: ProjectCard(project: project, api: widget.api),
+                  child: ProjectCard(project: project, data: widget.data),
                 ),
               if (_paginationError != null)
                 Padding(

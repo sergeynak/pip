@@ -1,17 +1,12 @@
-import 'dart:async';
-import 'dart:convert';
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 
-import '../api/api_service.dart';
+import '../data/demo_data.dart';
 import '../models.dart';
 import '../widgets/common_widgets.dart';
-import 'brief_success_screen.dart';
 
 class BriefScreen extends StatefulWidget {
-  const BriefScreen({super.key, required this.api, this.initialServiceTitle});
-  final ApiService api;
+  const BriefScreen({super.key, required this.data, this.initialServiceTitle});
+  final DemoData data;
   final String? initialServiceTitle;
   @override
   State<BriefScreen> createState() => _BriefScreenState();
@@ -25,34 +20,15 @@ class _BriefScreenState extends State<BriefScreen> {
   final _selectedServices = <String>{};
   late Future<BriefOptions> _optionsFuture;
   BriefOptions? _options;
-  String? _idempotencyKey;
-  String? _submittedFingerprint;
   String? _error;
-  bool _submitting = false;
   bool _allowPop = false;
   bool _confirmingDiscard = false;
-  DateTime? _retryUntil;
-  Timer? _retryTimer;
-  int _retryInitialSeconds = 0;
-  int _retryTicks = 0;
 
   bool get _hasDraft =>
       _name.text.isNotEmpty ||
       _contact.text.isNotEmpty ||
       _description.text.isNotEmpty ||
       _selectedServices.isNotEmpty;
-  int get _retrySeconds {
-    if (_retryUntil == null) return 0;
-
-    // Часы учитывают время в фоне, а таймер — прошедшие секунды без
-    // зависимости от ручного перевода часов на устройстве.
-    final remainingTime = _retryUntil!.difference(DateTime.now());
-    final remainingSeconds = (remainingTime.inMilliseconds / 1000).ceil();
-    final timerSeconds = _retryInitialSeconds - _retryTicks;
-    if (remainingSeconds <= 0 || timerSeconds <= 0) return 0;
-    if (remainingSeconds < timerSeconds) return remainingSeconds;
-    return timerSeconds;
-  }
 
   @override
   void initState() {
@@ -69,16 +45,14 @@ class _BriefScreenState extends State<BriefScreen> {
   }
 
   Future<BriefOptions> _loadOptions() async {
-    // Пока источник возвращает локальные варианты и ограничения полей.
-    // После подключения API этот же метод сможет получать их с сервера.
-    final options = await widget.api.getBriefOptions(contentLocale);
+    // Берём варианты и ограничения полей из локальных данных макета.
+    final options = await widget.data.getBriefOptions(contentLocale);
     _options = options;
     return options;
   }
 
   @override
   void dispose() {
-    _retryTimer?.cancel();
     _name.dispose();
     _contact.dispose();
     _description.dispose();
@@ -87,34 +61,8 @@ class _BriefScreenState extends State<BriefScreen> {
 
   void _draftChanged() => setState(() => _error = null);
 
-  void _startCooldown(Duration duration) {
-    // Подготовка к будущему API: после ошибки 429 выдерживаем время ожидания.
-    // Автоматического повтора нет:
-    // отправка снова станет доступна только по нажатию пользователя.
-    _retryTimer?.cancel();
-    _retryUntil = DateTime.now().add(duration);
-    _retryInitialSeconds = (duration.inMilliseconds / 1000).ceil();
-    _retryTicks = 0;
-    _retryTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (!mounted) {
-        timer.cancel();
-        return;
-      }
-      setState(() {
-        _retryTicks = timer.tick;
-        if (_retrySeconds == 0) timer.cancel();
-      });
-    });
-  }
-
   Future<void> _confirmDiscard() async {
     // Не теряем введённые данные при случайном нажатии «Назад».
-    if (_submitting) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Дождитесь результата отправки заявки.')),
-      );
-      return;
-    }
     if (_confirmingDiscard) return;
     _confirmingDiscard = true;
     final discard = await showDialog<bool>(
@@ -145,97 +93,27 @@ class _BriefScreenState extends State<BriefScreen> {
     }
   }
 
-  String _newKey() {
-    final random = Random.secure();
-    String key = '';
-    // 32 случайных шестнадцатеричных символа, без персональных данных.
-    for (int i = 0; i < 32; i++) {
-      key += random.nextInt(16).toRadixString(16);
-    }
-    return key;
-  }
-
-  Future<void> _submit() async {
-    // Сначала проверяем форму и блокировку повторной отправки.
-    if (_submitting ||
-        _retrySeconds > 0 ||
-        _options == null ||
-        !_formKey.currentState!.validate()) {
-      return;
-    }
+  void _submit() {
+    if (_options == null || !_formKey.currentState!.validate()) return;
     FocusScope.of(context).unfocus();
-    final selectedServices = _selectedServices.toList();
-    selectedServices.sort();
-    final draft = BriefDraft(
-      name: _name.text.trim(),
-      contact: _contact.text.trim(),
-      services: selectedServices,
-      description: _description.text.trim(),
-      locale: contentLocale,
-    );
-    // Одинаковые данные получают прежний ключ для будущей защиты от дублей
-    // на сервере. Сейчас источник ничего не отправляет. Курсор ключ не меняет.
-    final fingerprint = jsonEncode([
-      draft.name,
-      draft.contact,
-      draft.services,
-      draft.description,
-      draft.locale.name,
-    ]);
-    if (_idempotencyKey == null || fingerprint != _submittedFingerprint) {
-      _idempotencyKey = _newKey();
-      _submittedFingerprint = fingerprint;
-    }
+    // TODO: здесь позже будет отправка заявки через API.
     setState(() {
-      _submitting = true;
-      _error = null;
+      _error =
+          'API ещё не подключён. Заявка не отправлена; введённые данные сохранены на этом экране.';
     });
-    try {
-      final receipt = await widget.api.sendBrief(
-        draft,
-        idempotencyKey: _idempotencyKey!,
-      );
-      if (!mounted) return;
-      _idempotencyKey = null;
-      _submittedFingerprint = null;
-      _allowPop = true;
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute<void>(
-          builder: (_) => BriefSuccessScreen(api: widget.api, receipt: receipt),
-        ),
-      );
-    } on AppException catch (error) {
-      if (mounted) {
-        setState(() {
-          _error = error.message;
-          if (error.statusCode == 429 || error.code == 'RATE_LIMITED') {
-            _startCooldown(error.retryAfter ?? const Duration(seconds: 60));
-          }
-        });
-      }
-    } catch (_) {
-      if (mounted) {
-        setState(
-          () => _error =
-              'Не удалось отправить заявку. Попробуйте ещё раз — введённые данные сохранены.',
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _submitting = false);
-    }
   }
 
   @override
   Widget build(BuildContext context) => PopScope<void>(
-    canPop: _allowPop || (!_hasDraft && !_submitting),
+    canPop: _allowPop || !_hasDraft,
     onPopInvokedWithResult: (didPop, result) {
       if (!didPop) _confirmDiscard();
     },
     child: DetailScaffold(
-      api: widget.api,
+      data: widget.data,
       title: 'Обсудить проект',
       onBack: () {
-        if (_hasDraft || _submitting) {
+        if (_hasDraft) {
           _confirmDiscard();
         } else {
           Navigator.of(context).pop();
@@ -251,7 +129,7 @@ class _BriefScreenState extends State<BriefScreen> {
               subtitle:
                   'Пара слов о задаче — и мы поймём, чем можем быть полезны.',
             ),
-            if (widget.api.isDemo)
+            if (widget.data.isDemo)
               const Padding(
                 padding: EdgeInsets.only(bottom: 24),
                 child: Panel(
@@ -289,7 +167,6 @@ class _BriefScreenState extends State<BriefScreen> {
                   TextFormField(
                     key: const Key('brief-name'),
                     controller: _name,
-                    enabled: !_submitting,
                     maxLength: options.nameMax,
                     textCapitalization: TextCapitalization.words,
                     textInputAction: TextInputAction.next,
@@ -310,7 +187,6 @@ class _BriefScreenState extends State<BriefScreen> {
                   TextFormField(
                     key: const Key('brief-contact'),
                     controller: _contact,
-                    enabled: !_submitting,
                     maxLength: options.contactMax,
                     keyboardType: TextInputType.text,
                     textInputAction: TextInputAction.next,
@@ -351,10 +227,9 @@ class _BriefScreenState extends State<BriefScreen> {
                           label: Text(option),
                           selected: _selectedServices.contains(option),
                           onSelected:
-                              _submitting ||
-                                  (!_selectedServices.contains(option) &&
-                                      _selectedServices.length >=
-                                          options.servicesMax)
+                              (!_selectedServices.contains(option) &&
+                                  _selectedServices.length >=
+                                      options.servicesMax)
                               ? null
                               : (selected) => setState(() {
                                   _error = null;
@@ -371,7 +246,6 @@ class _BriefScreenState extends State<BriefScreen> {
                   TextFormField(
                     key: const Key('brief-description'),
                     controller: _description,
-                    enabled: !_submitting,
                     minLines: 4,
                     maxLines: 8,
                     maxLength: options.messageMax,
@@ -409,43 +283,15 @@ class _BriefScreenState extends State<BriefScreen> {
                         ),
                       ),
                     ),
-                  if (_retrySeconds > 0)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 14),
-                      child: Text(
-                        'Повторная отправка через $_retrySeconds с',
-                        key: const Key('brief-cooldown'),
-                        style: const TextStyle(
-                          color: PipColors.amber,
-                          fontSize: 13,
-                        ),
-                      ),
-                    ),
                   FilledButton(
                     key: const Key('brief-submit'),
-                    onPressed: _submitting || _retrySeconds > 0
-                        ? null
-                        : _submit,
-                    child: Row(
+                    onPressed: _submit,
+                    child: const Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        if (_submitting) ...[
-                          const SizedBox(
-                            width: 17,
-                            height: 17,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          ),
-                          const SizedBox(width: 10),
-                        ],
-                        Flexible(
-                          child: Text(
-                            _submitting ? 'Отправляем…' : 'Отправить заявку',
-                          ),
-                        ),
-                        if (!_submitting) ...[
-                          const SizedBox(width: 12),
-                          const Icon(Icons.north_east_rounded, size: 19),
-                        ],
+                        Flexible(child: Text('Отправить заявку')),
+                        SizedBox(width: 12),
+                        Icon(Icons.north_east_rounded, size: 19),
                       ],
                     ),
                   ),

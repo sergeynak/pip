@@ -1,7 +1,7 @@
-import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
-import 'api/api_service.dart';
+import 'data/demo_data.dart';
 import 'screens/blog_screen.dart';
 import 'screens/contacts_screen.dart';
 import 'screens/home_screen.dart';
@@ -10,21 +10,9 @@ import 'screens/portfolio_screen.dart';
 import 'screens/services_screen.dart';
 import 'widgets/common_widgets.dart';
 
-class PipApp extends StatefulWidget {
-  const PipApp({super.key, required this.api});
-  final ApiService api;
-
-  @override
-  State<PipApp> createState() => _PipAppState();
-}
-
-class _PipAppState extends State<PipApp> {
-  @override
-  void dispose() {
-    // Освобождаем HTTP-клиент, когда приложение больше не используется.
-    widget.api.close();
-    super.dispose();
-  }
+class PipApp extends StatelessWidget {
+  const PipApp({super.key, required this.data});
+  final DemoData data;
 
   @override
   Widget build(BuildContext context) {
@@ -117,14 +105,14 @@ class _PipAppState extends State<PipApp> {
           thickness: 1,
         ),
       ),
-      home: StudioShell(api: widget.api),
+      home: StudioShell(data: data),
     );
   }
 }
 
 class StudioShell extends StatefulWidget {
-  const StudioShell({super.key, required this.api});
-  final ApiService api;
+  const StudioShell({super.key, required this.data});
+  final DemoData data;
 
   @override
   State<StudioShell> createState() => _StudioShellState();
@@ -139,11 +127,11 @@ class _StudioShellState extends State<StudioShell> {
     super.initState();
     // Создаём вкладки один раз: при переключении поиск и прокрутка сохранятся.
     _pages = [
-      HomeScreen(api: widget.api, onTab: (i) => setState(() => _index = i)),
-      ServicesScreen(api: widget.api),
-      PortfolioScreen(api: widget.api),
-      BlogScreen(api: widget.api),
-      ContactsScreen(api: widget.api),
+      HomeScreen(data: widget.data, onTab: (i) => setState(() => _index = i)),
+      ServicesScreen(data: widget.data),
+      PortfolioScreen(data: widget.data),
+      BlogScreen(data: widget.data),
+      ContactsScreen(data: widget.data),
     ];
   }
 
@@ -180,13 +168,13 @@ class _StudioShellState extends State<StudioShell> {
       ),
       actions: [
         IconButton.filledTonal(
-          onPressed: () => openBrief(context, widget.api),
+          onPressed: () => openBrief(context, widget.data),
           tooltip: 'Обсудить проект',
           icon: const Icon(Icons.north_east_rounded, size: 21),
         ),
         const SizedBox(width: 15),
       ],
-      bottom: widget.api.isDemo
+      bottom: widget.data.isDemo
           ? const PreferredSize(
               preferredSize: Size.fromHeight(35),
               child: DemoNotice(),

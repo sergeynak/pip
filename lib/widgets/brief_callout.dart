@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 
-import '../api/api_service.dart';
+import '../data/demo_data.dart';
 import '../screens/navigation.dart';
 import 'common_widgets.dart';
 
 class BriefCallout extends StatelessWidget {
-  const BriefCallout({super.key, required this.api});
-  final ApiService api;
+  const BriefCallout({super.key, required this.data});
+  final DemoData data;
   @override
   Widget build(BuildContext context) => Panel(
     child: Column(
@@ -27,7 +27,7 @@ class BriefCallout extends StatelessWidget {
         SizedBox(
           width: double.infinity,
           child: FilledButton(
-            onPressed: () => openBrief(context, api),
+            onPressed: () => openBrief(context, data),
             child: const Text('Оставить заявку'),
           ),
         ),

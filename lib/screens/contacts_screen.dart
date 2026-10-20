@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 
-import '../api/api_service.dart';
+import '../data/demo_data.dart';
 import '../models.dart';
 import '../widgets/brief_callout.dart';
 import '../widgets/common_widgets.dart';
 
 class ContactsScreen extends StatefulWidget {
-  const ContactsScreen({super.key, required this.api});
-  final ApiService api;
+  const ContactsScreen({super.key, required this.data});
+  final DemoData data;
   @override
   State<ContactsScreen> createState() => _ContactsScreenState();
 }
@@ -18,14 +18,14 @@ class _ContactsScreenState extends State<ContactsScreen> {
   void initState() {
     super.initState();
     // Сейчас источник возвращает примеры контактов. Позже здесь будут данные API.
-    _contactsFuture = widget.api.getContacts(contentLocale);
+    _contactsFuture = widget.data.getContacts(contentLocale);
   }
 
   @override
   Widget build(BuildContext context) => PageBody(
     onRefresh: () async {
       setState(() {
-        _contactsFuture = widget.api.getContacts(contentLocale);
+        _contactsFuture = widget.data.getContacts(contentLocale);
       });
       try {
         await _contactsFuture;
@@ -42,7 +42,7 @@ class _ContactsScreenState extends State<ContactsScreen> {
       AsyncContent(
         future: _contactsFuture,
         onRetry: () => setState(() {
-          _contactsFuture = widget.api.getContacts(contentLocale);
+          _contactsFuture = widget.data.getContacts(contentLocale);
         }),
         builder: (contacts) => Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -50,11 +50,11 @@ class _ContactsScreenState extends State<ContactsScreen> {
             _ContactCard(
               icon: Icons.send_outlined,
               title: 'Telegram',
-              value: widget.api.isDemo
+              value: widget.data.isDemo
                   ? '@pip_example'
                   : contacts.telegram?.toString(),
-              isExample: widget.api.isDemo,
-              onTap: widget.api.isDemo || contacts.telegram == null
+              isExample: widget.data.isDemo,
+              onTap: widget.data.isDemo || contacts.telegram == null
                   ? null
                   : () => openExternal(context, contacts.telegram!),
             ),
@@ -63,8 +63,8 @@ class _ContactsScreenState extends State<ContactsScreen> {
               icon: Icons.mail_outline_rounded,
               title: 'Почта',
               value: contacts.email,
-              isExample: widget.api.isDemo,
-              onTap: widget.api.isDemo || contacts.email == null
+              isExample: widget.data.isDemo,
+              onTap: widget.data.isDemo || contacts.email == null
                   ? null
                   : () => openExternal(
                       context,
@@ -78,8 +78,8 @@ class _ContactsScreenState extends State<ContactsScreen> {
                 icon: Icons.language_rounded,
                 title: 'Сайт',
                 value: contacts.websiteUrl.toString(),
-                isExample: widget.api.isDemo,
-                onTap: widget.api.isDemo
+                isExample: widget.data.isDemo,
+                onTap: widget.data.isDemo
                     ? null
                     : () => openExternal(context, contacts.websiteUrl!),
               ),
@@ -110,7 +110,7 @@ class _ContactsScreenState extends State<ContactsScreen> {
         ),
       ),
       const SizedBox(height: 30),
-      BriefCallout(api: widget.api),
+      BriefCallout(data: widget.data),
     ],
   );
 }

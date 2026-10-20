@@ -1,20 +1,20 @@
 import 'package:flutter/material.dart';
 
-import '../api/api_service.dart';
+import '../data/demo_data.dart';
 import '../models.dart';
 import '../screens/project_screen.dart';
 import 'common_widgets.dart';
 
 class ProjectCard extends StatelessWidget {
-  const ProjectCard({super.key, required this.project, required this.api});
+  const ProjectCard({super.key, required this.project, required this.data});
   final StudioProject project;
-  final ApiService api;
+  final DemoData data;
   @override
   Widget build(BuildContext context) => Panel(
     padding: EdgeInsets.zero,
     onTap: () => Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (_) => ProjectScreen(api: api, project: project),
+        builder: (_) => ProjectScreen(data: data, project: project),
       ),
     ),
     child: Column(
@@ -28,9 +28,9 @@ class ProjectCard extends StatelessWidget {
               ProjectArtwork(
                 variant: project.visual,
                 imageUrl: project.coverUrl,
-                demo: api.isDemo,
+                demo: data.isDemo,
               ),
-              if (api.isDemo)
+              if (data.isDemo)
                 const Positioned(left: 14, top: 14, child: ExampleTag()),
             ],
           ),

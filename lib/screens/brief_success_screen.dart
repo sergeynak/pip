@@ -1,20 +1,15 @@
 import 'package:flutter/material.dart';
 
-import '../api/api_service.dart';
-import '../models.dart';
+import '../data/demo_data.dart';
 import '../widgets/common_widgets.dart';
 
+// TODO: открывать этот экран только после подключения отправки заявки.
 class BriefSuccessScreen extends StatelessWidget {
-  const BriefSuccessScreen({
-    super.key,
-    required this.api,
-    required this.receipt,
-  });
-  final ApiService api;
-  final BriefReceipt receipt;
+  const BriefSuccessScreen({super.key, required this.data});
+  final DemoData data;
   @override
   Widget build(BuildContext context) => DetailScaffold(
-    api: api,
+    data: data,
     title: 'Заявка',
     body: PageBody(
       children: [
@@ -41,11 +36,6 @@ class BriefSuccessScreen extends StatelessWidget {
         const Text(
           'Спасибо за вашу идею. Студия получила заявку и сможет связаться с вами по указанному контакту.',
           style: TextStyle(color: PipColors.muted, height: 1.7, fontSize: 16),
-        ),
-        const SizedBox(height: 18),
-        Text(
-          'Номер заявки: ${receipt.id}',
-          style: const TextStyle(color: PipColors.muted, fontSize: 12),
         ),
         const SizedBox(height: 32),
         FilledButton(

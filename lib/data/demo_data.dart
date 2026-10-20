@@ -1,10 +1,8 @@
 import '../models.dart';
-import 'api_service.dart';
 
 /// Демонстрационные данные для запуска без обращения к серверу.
-class DemoApiService extends ApiService {
-  DemoApiService();
-  @override
+class DemoData {
+  DemoData();
   bool get isDemo => true;
 
   static LocalizedText _ru(String text) =>
@@ -138,12 +136,10 @@ class DemoApiService extends ApiService {
     ),
   ];
 
-  @override
   Future<ContentPage<StudioService>> getServices(ContentLocale locale) async {
     return ContentPage(demoServices);
   }
 
-  @override
   Future<StudioService> getService(String slug, ContentLocale locale) async {
     for (final service in demoServices) {
       if (service.id == slug) return service;
@@ -151,7 +147,6 @@ class DemoApiService extends ApiService {
     throw const AppException('Услуга не найдена.');
   }
 
-  @override
   Future<ContentPage<StudioProject>> getProjects(
     ContentLocale locale, {
     String query = '',
@@ -170,7 +165,6 @@ class DemoApiService extends ApiService {
     return ContentPage(projects);
   }
 
-  @override
   Future<StudioProject> getProject(String slug, ContentLocale locale) async {
     for (final project in demoProjects) {
       if (project.slug == slug) return project;
@@ -178,7 +172,6 @@ class DemoApiService extends ApiService {
     throw const AppException('Проект не найден.');
   }
 
-  @override
   Future<ContentPage<StudioArticle>> getArticles(
     ContentLocale locale, {
     int page = 1,
@@ -188,7 +181,6 @@ class DemoApiService extends ApiService {
     return ContentPage(demoArticles);
   }
 
-  @override
   Future<StudioArticle> getArticle(String slug, ContentLocale locale) async {
     for (final article in demoArticles) {
       if (article.slug == slug) return article;
@@ -196,7 +188,6 @@ class DemoApiService extends ApiService {
     throw const AppException('Статья не найдена.');
   }
 
-  @override
   Future<StudioContact> getContacts(ContentLocale locale) async {
     return StudioContact(
       email: 'hello@example.com',
@@ -206,7 +197,6 @@ class DemoApiService extends ApiService {
     );
   }
 
-  @override
   Future<BriefOptions> getBriefOptions(ContentLocale locale) async {
     return const BriefOptions(
       serviceOptions: [
@@ -217,17 +207,6 @@ class DemoApiService extends ApiService {
         'Автоматизация',
         'AI',
       ],
-    );
-  }
-
-  @override
-  Future<BriefReceipt> sendBrief(
-    BriefDraft draft, {
-    required String idempotencyKey,
-  }) async {
-    throw const AppException(
-      'API ещё не подключён. Заявка не отправлена; введённые данные сохранены на этом экране.',
-      code: 'API_NOT_CONNECTED',
     );
   }
 

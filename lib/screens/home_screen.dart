@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../api/api_service.dart';
+import '../data/demo_data.dart';
 import '../models.dart';
 import '../widgets/brief_callout.dart';
 import '../widgets/common_widgets.dart';
@@ -9,8 +9,8 @@ import '../widgets/service_card.dart';
 import 'navigation.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key, required this.api, required this.onTab});
-  final ApiService api;
+  const HomeScreen({super.key, required this.data, required this.onTab});
+  final DemoData data;
   final ValueChanged<int> onTab;
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -24,16 +24,16 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     // Читаем локальные услуги и избранные проекты через общий источник данных.
-    _services = widget.api.getServices(contentLocale);
-    _projects = widget.api.getProjects(contentLocale, featured: true);
+    _services = widget.data.getServices(contentLocale);
+    _projects = widget.data.getProjects(contentLocale, featured: true);
   }
 
   @override
   Widget build(BuildContext context) => PageBody(
     onRefresh: () async {
       setState(() {
-        _services = widget.api.getServices(contentLocale);
-        _projects = widget.api.getProjects(contentLocale, featured: true);
+        _services = widget.data.getServices(contentLocale);
+        _projects = widget.data.getProjects(contentLocale, featured: true);
       });
       try {
         await Future.wait([_services, _projects]);
@@ -60,7 +60,7 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       const SizedBox(height: 25),
       FilledButton(
-        onPressed: () => openBrief(context, widget.api),
+        onPressed: () => openBrief(context, widget.data),
         child: const Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -80,7 +80,7 @@ class _HomeScreenState extends State<HomeScreen> {
       AsyncContent(
         future: _services,
         onRetry: () => setState(() {
-          _services = widget.api.getServices(contentLocale);
+          _services = widget.data.getServices(contentLocale);
         }),
         builder: (page) {
           if (page.items.isEmpty) {
@@ -97,7 +97,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: ServiceCard(
                     service: service,
                     index: index,
-                    api: widget.api,
+                    data: widget.data,
                     compact: true,
                   ),
                 ),
@@ -110,7 +110,7 @@ class _HomeScreenState extends State<HomeScreen> {
         action: 'Все',
         onAll: () => widget.onTab(2),
       ),
-      if (widget.api.isDemo)
+      if (widget.data.isDemo)
         const Padding(
           padding: EdgeInsets.only(bottom: 14),
           child: Text(
@@ -121,7 +121,7 @@ class _HomeScreenState extends State<HomeScreen> {
       AsyncContent(
         future: _projects,
         onRetry: () => setState(() {
-          _projects = widget.api.getProjects(contentLocale, featured: true);
+          _projects = widget.data.getProjects(contentLocale, featured: true);
         }),
         builder: (page) => Column(
           children: [
@@ -133,13 +133,13 @@ class _HomeScreenState extends State<HomeScreen> {
             for (final project in page.items.take(2))
               Padding(
                 padding: const EdgeInsets.only(bottom: 16),
-                child: ProjectCard(project: project, api: widget.api),
+                child: ProjectCard(project: project, data: widget.data),
               ),
           ],
         ),
       ),
       const SizedBox(height: 15),
-      BriefCallout(api: widget.api),
+      BriefCallout(data: widget.data),
     ],
   );
 }

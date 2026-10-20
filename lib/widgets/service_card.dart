@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../api/api_service.dart';
+import '../data/demo_data.dart';
 import '../models.dart';
 import '../screens/service_screen.dart';
 import 'common_widgets.dart';
@@ -10,18 +10,18 @@ class ServiceCard extends StatelessWidget {
     super.key,
     required this.service,
     required this.index,
-    required this.api,
+    required this.data,
     this.compact = false,
   });
   final StudioService service;
   final int index;
-  final ApiService api;
+  final DemoData data;
   final bool compact;
   @override
   Widget build(BuildContext context) => Panel(
     onTap: () => Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (_) => ServiceScreen(service: service, api: api),
+        builder: (_) => ServiceScreen(service: service, data: data),
       ),
     ),
     child: Column(

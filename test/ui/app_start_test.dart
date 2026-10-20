@@ -11,7 +11,7 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
 
-      // Запускаем настоящую точку входа, не подставляя источник из теста.
+      // Проверяем обычный запуск с DemoData из main, без подмены приложения.
       app.main();
       await tester.pumpAndSettle();
       expect(find.text('Макет · API не подключён'), findsOneWidget);
